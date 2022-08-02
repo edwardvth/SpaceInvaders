@@ -47,45 +47,22 @@ xChangePlayer = 0
 def player(x, y):
     screen.blit(PlayerImage, (x, y))
 
+# check collision
+def Collision(EX, EX2, EY, EY2, LX, LY):
+    distance = math.sqrt((math.pow(EX - LX, 2) + math.pow(EY - LY, 2)))
+    distance2 = math.sqrt((math.pow(EX2 - LX, 2) + math.pow(EY2 - LY, 2)))
 
+    if distance <= 35:
+        return 1
+    elif distance2 <= 35:
+        return 2
 
-# enemy 
-EnemyImage = []
-EnemyX = []
-EnemyX_2 = [] # row bottom
-EnemyY = []
-EnemyY_2 = [] # row bottom
-numEnemies = 4
+        
+def DistanceEnemy(EX, EX2, EY, EY2):
+    distance = math.sqrt((math.pow(EX2 - EX, 2) + math.pow(EY2 - EY, 2)))
 
-for i in range(numEnemies):
-    EnemyImage1 = pygame.image.load('enemy.png') 
-    EnemyImage.append( pygame.transform.scale(EnemyImage1, (70, 70)) )
-    y = i * 10
-    x = y * 10
-    EnemyX.append( x ) #150
-    EnemyY.append(50)
-
-    xEnemyChange = ( 0.2 )
-    yEnemyChange = ( 40 )
-
-for i in range(numEnemies):
-    EnemyImage1 = pygame.image.load('enemy.png') 
-    EnemyImage.append( pygame.transform.scale(EnemyImage1, (70, 70)) )
-    y = i * 10
-    x = y * 10
-    EnemyX_2.append( x )
-    EnemyY_2.append(150)
-
-    xEnemyChange = ( 0.2 )
-    yEnemyChange = ( 50 )
-
-def enemy(x, x2, y, y2, i):
-    screen.blit(EnemyImage[i], (x, y))
-    screen.blit(EnemyImage[i], (x2, y2))
-
-def enemyGameOver(x, x2, y, y2):
-    screen.blit(EnemyImage[i], (x, y))
-    screen.blit(EnemyImage[i], (x2, y2))
+    if distance <= 70:
+        return True
 
 
 # bottom line
@@ -114,30 +91,80 @@ def Firelaser(x, y):
     screen.blit(LaserImage, (x+17, y+10))
 
 
-# check collision
-def Collision(EX, EX2, EY, EY2, LX, LY):
-    distance = math.sqrt((math.pow(EX - LX, 2) + math.pow(EY - LY, 2)))
-    distance2 = math.sqrt((math.pow(EX2 - LX, 2) + math.pow(EY2 - LY, 2)))
-
-    if distance <= 35:
-        return 1
-    elif distance2 <= 35:
-        return 2
-
-        
-def DistanceEnemy(EX, EX2, EY, EY2):
-    distance = math.sqrt((math.pow(EX2 - EX, 2) + math.pow(EY2 - EY, 2)))
-
-    if distance <= 70:
-        return True
-
-
 GameOverfont = pygame.font.Font('freesansbold.ttf', 82)
 
 def GameOver():
     global GameOverfont
     text = GameOverfont.render("GAME OVER", True, (255, 255, 255))
     screen.blit(text, (140, 250))
+
+
+
+
+
+# enemy
+class EnemyClass:
+    EnemyImage = pygame.transform.scale(pygame.image.load('enemy.png'), (70, 70))
+
+    def __init__(self):
+        self.EnemyX = []
+        self.EnemyY = []
+        self.numEnemies = 4
+        self.xEnemyChange = 0.2
+        self.yEnemyChange = 50
+
+        
+    def enemyMovement(self, i):
+        self.EnemyX[i] += self.xEnemyChange
+
+        if self.EnemyX[i] >= 736:
+            self.xEnemyChange = -self.xEnemyChange
+            for x in range(len(self.EnemyY)):
+                self.EnemyY[x] += self.yEnemyChange
+        elif self.EnemyX[i] <= 0:
+            self.xEnemyChange = .2
+            for x in range(len(self.EnemyY)):
+                self.EnemyY[x] += self.yEnemyChange
+
+    def enemy(self, i):
+        screen.blit(EnemyClass.EnemyImage, (self.EnemyX[i], self.EnemyY[i]))
+
+    def enemyGameOver(self, x, y):
+        screen.blit(EnemyClass.EnemyImage[i], (x, y))
+
+    def CollisionDetection(self, i, scoreValue, lasery, laserstate):
+        global LaserY, LaserState
+        ExplosionSound = mixer.Sound('explosion.wav')
+        ExplosionSound.play()
+        LaserY = lasery
+        LaserState = laserstate
+        scoreValue += 1
+
+        # enemy respawn
+        OldEnemyY = self.EnemyY[i]
+        self.EnemyY[i] = -20
+
+        if self.EnemyY[i] >= OldEnemyY:
+            self.EnemyY[i] -= 40
+
+
+
+EnemyRowBottom = EnemyClass()
+EnemyRowTop = EnemyClass()
+
+for i in range(EnemyRowBottom.numEnemies):
+    y = i * 10
+    x = y * 10
+    EnemyRowBottom.EnemyX.append( x ) 
+    EnemyRowBottom.EnemyY.append( 150 )
+
+for i in range(EnemyRowTop.numEnemies):
+    y = i * 10
+    x = y * 10
+    EnemyRowTop.EnemyX.append( x ) 
+    EnemyRowTop.EnemyY.append( 50 )
+
+
 
 
 
@@ -184,85 +211,58 @@ while running:
     elif playerX >= 736:
         playerX = 735
 
+
+
+
     # setting boudries for the enemy 
-    for i in range(numEnemies):
-        enemy(EnemyX[i], EnemyX_2[i], EnemyY[i], EnemyY_2[i], i)
+    for i in range(EnemyRowTop.numEnemies):
+
+        BlitEnemy1 = EnemyRowTop.enemy(i)
+        BlitEnemy2 = EnemyRowBottom.enemy(i)
 
         gameSoundPlayed = 0
-        if EnemyY[i] >= 600 or EnemyY_2[i] >= 600 and (gameSoundPlayed == 0):
+        if EnemyRowTop.EnemyY[i] >= 600 or EnemyRowBottom.EnemyY[i] >= 600 and (gameSoundPlayed == 0):
             GameOver()
             BottomLine(LineX, LineY)
             player(playerX, playerY)
             show_score(textX, textY)
             pygame.display.update()
             gameSoundPlayed += 1
-            xEnemyChange = 0
-            yEnemyChange = 0
+            EnemyRowTop.xEnemyChange = 0
+            EnemyRowTop.yEnemyChange = 0
+            EnemyRowBottom.xEnemyChange = 0
+            EnemyRowBottom.yEnemyChange = 0
             mixer.music.stop()
             mixer.music.load('GameOverSound.wav')
             mixer.music.play()
             time.sleep(3)
             break
-            
-            
 
-        EnemyX[i] += xEnemyChange
-        EnemyX_2[i] += xEnemyChange
+            
+        EnemyRowTop.enemyMovement(i)
+        EnemyRowBottom.enemyMovement(i)        
 
-        if EnemyX[i] >= 736 or EnemyX_2[i] >= 736:
-            xEnemyChange = -0.2
-            for x in range(len(EnemyY)):
-                EnemyY[x] += yEnemyChange
-            for x in range(len(EnemyY)):
-                EnemyY_2[x] += yEnemyChange
-        elif EnemyX[i] <= 0 or EnemyX_2[i] <= 0:
-            xEnemyChange = 0.2
-            for x in range(len(EnemyY)):
-                EnemyY[x] += yEnemyChange
-            for x in range(len(EnemyY)):
-                EnemyY_2[x] += yEnemyChange
-        
 
         # collision detection
-        collision = Collision(EnemyX[i], EnemyX_2[i], EnemyY[i], EnemyY_2[i], LaserX, LaserY)
+        collision = Collision(EnemyRowTop.EnemyX[i], EnemyRowBottom.EnemyX[i], EnemyRowTop.EnemyY[i], EnemyRowBottom.EnemyY[i], LaserX, LaserY)
         if collision == 1:
-            ExplosionSound = mixer.Sound('explosion.wav')
-            ExplosionSound.play()
-            LaserY = 600
-            LaserState = "Ready"
-            scoreValue += 1
+            EnemyRowTop.CollisionDetection(i, scoreValue, 600, "Ready")
 
-            # enemy respawn
-            OldEnemyY = EnemyY[i]
-            EnemyY[i] = -20
-
-            if EnemyY[i] >= OldEnemyY:
-                EnemyY[i] -= 40
-
-            EnemyDistance = DistanceEnemy(EnemyX[i], EnemyX_2[i], EnemyY[i], EnemyY_2[i])
+            EnemyDistance = DistanceEnemy(EnemyRowTop.EnemyX[i], EnemyRowBottom.EnemyX[i], EnemyRowTop.EnemyY[i], EnemyRowBottom.EnemyY[i])
             if EnemyDistance == True:
-                EnemyY[i] -= 50
+                EnemyRowTop.EnemyY[i] -= 50
+
 
 
         if collision == 2:
-            ExplosionSound = mixer.Sound('explosion.wav')
-            ExplosionSound.play()
-            LaserY = 600
-            LaserState = "Ready"
-            scoreValue += 1
+            EnemyRowBottom.CollisionDetection(i, scoreValue, 600, "Ready")
 
-            # enemy respawn row bottom
-            OldEnemyY2 = EnemyY_2[i]
-            EnemyY_2[i] = -40 
-
-            if EnemyY_2[i] >= OldEnemyY2:
-                EnemyY_2[i] -= 20
-
-            EnemyDistance = DistanceEnemy(EnemyX[i], EnemyX_2[i], EnemyY[i], EnemyY_2[i])
+            EnemyDistance = DistanceEnemy(EnemyRowTop.EnemyX[i], EnemyRowBottom.EnemyX[i], EnemyRowTop.EnemyY[i], EnemyRowBottom.EnemyY[i])
             if EnemyDistance == True:
-                EnemyY_2[i] -= 50
+                EnemyRowBottom.EnemyY[i] -= 50
 
-        enemy(EnemyX[i], EnemyX_2[i], EnemyY[i], EnemyY_2[i], i)
+        BlitEnemy1
+        BlitEnemy2
 
 
     # laser movement
